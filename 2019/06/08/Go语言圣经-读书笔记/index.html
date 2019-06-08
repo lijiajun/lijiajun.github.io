@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="LiJiaJun&#39;s NoteBook">
 <meta property="og:description" content="1 入门篇 “必须恰当导入需要的包，缺少了必要的包或者导入了不需要的包，程序都无法编译通过。这项严格要求避免了程序开发过程中引入未使用的包” “和大多数编程语言类似，区间索引时，Go言里也采用左闭右开形式, 即，区间包括第一个索引元素，不包括最后一个, 因为这样可以简化逻辑” “符号:=是短变量声明（short variable declaration）的一部分, 这是定义一个或多个变量并根据它们">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:updated_time" content="2019-06-08T14:58:25.017Z">
+<meta property="og:updated_time" content="2019-06-08T16:56:46.761Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Go语言圣经-读书笔记">
 <meta name="twitter:description" content="1 入门篇 “必须恰当导入需要的包，缺少了必要的包或者导入了不需要的包，程序都无法编译通过。这项严格要求避免了程序开发过程中引入未使用的包” “和大多数编程语言类似，区间索引时，Go言里也采用左闭右开形式, 即，区间包括第一个索引元素，不包括最后一个, 因为这样可以简化逻辑” “符号:=是短变量声明（short variable declaration）的一部分, 这是定义一个或多个变量并根据它们">
@@ -268,6 +268,18 @@
 <p>“接口指定的规则非常简单：表达一个类型属于某个接口只要这个类型实现这个接口。”</p>
 <blockquote>
 <p><em>第11天：读完7.4章节，P608/1195页,落后计划52页, 每天要读60页, Mac版图书</em></p>
+</blockquote>
+<p>“其它类型要么是安全的可比较类型（如基本类型和指针）要么是完全不可比较的类型（如切片，映射类型，”</p>
+<p>“和函数），但是在比较接口值或者包含了接口值的聚合类型时，我们必须要意识到潜在的panic。同样的风险也存在于使用接口作为map的键或者switch的操作数。”</p>
+<p>“一个不包含任何值的nil接口值和一个刚好包含nil指针的接口值是不同的。这个细微区别产生了一个容易绊倒每个Go程序员的陷阱”</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">“<span class="keyword">const</span> debug = <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> buf *bytes.Buffer</span><br><span class="line">    <span class="keyword">if</span> debug &#123;</span><br><span class="line">        buf = <span class="built_in">new</span>(bytes.Buffer) <span class="comment">// enable collection of output</span></span><br><span class="line">    &#125;</span><br><span class="line">    f(buf) <span class="comment">// <span class="doctag">NOTE:</span> subtly incorrect!</span></span><br><span class="line">    <span class="keyword">if</span> debug &#123;</span><br><span class="line">        <span class="comment">// ...use buf...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// If out is non-nil, output will be written to it.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">f</span><span class="params">(out io.Writer)</span></span> &#123;</span><br><span class="line">    <span class="comment">// ...do something...</span></span><br><span class="line">    <span class="keyword">if</span> out != <span class="literal">nil</span> &#123;</span><br><span class="line">        out.Write([]<span class="keyword">byte</span>(<span class="string">"done!\n"</span>))</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们可能会预计当把变量debug设置为false时可以禁止对输出的收集，但是实际上在out.Write方法调用时程序发生了panic：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> out != <span class="literal">nil</span> &#123;</span><br><span class="line">    out.Write([]<span class="keyword">byte</span>(<span class="string">"done!\n"</span>)) <span class="comment">// panic: nil pointer dereference</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当main函数调用函数f时，它给f函数的out参数赋了一个<em>bytes.Buffer的空指针，所以out的动态值是nil。然而，它的动态类型是</em>bytes.Buffer，意思就是out变量是一个包含空指针值的非空接口（如图7.5），所以防御性检查out!=nil的结果依然是true”</p>
+<blockquote>
+<p><em>第12天：读完7.11章节，P692/1195页,落后计划28页, 每天要读60页, Mac版图书</em></p>
 </blockquote>
 
       
