@@ -137,21 +137,6 @@
     <article id="post-Go语言圣经-读书笔记" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/06/08/Go语言圣经-读书笔记/">Go语言圣经-读书笔记</a>
-    </h1>
-  
-
-        
-        <a href="/2019/06/08/Go语言圣经-读书笔记/" class="archive-article-date">
-  	<time datetime="2019-06-08T14:57:32.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-06-08</time>
-</a>
-        
-      </header>
-    
     <div class="article-entry" itemprop="articleBody">
       
         <h1 id="1-入门篇"><a href="#1-入门篇" class="headerlink" title="1 入门篇"></a>1 入门篇</h1><p> “必须恰当导入需要的包，缺少了必要的包或者导入了不需要的包，程序都无法编译通过。这项严格要求避免了程序开发过程中引入未使用的包”</p>
@@ -267,17 +252,43 @@
 <blockquote>
 <p><em>第11天：读完7.4章节，P608/1195页,落后计划52页, 每天要读60页, Mac版图书</em></p>
 </blockquote>
-<p>“其它类型要么是安全的可比较类型（如基本类型和指针）要么是完全不可比较的类型（如切片，映射类型，”</p>
-<p>“和函数），但是在比较接口值或者包含了接口值的聚合类型时，我们必须要意识到潜在的panic。同样的风险也存在于使用接口作为map的键或者switch的操作数。”</p>
-<p>“一个不包含任何值的nil接口值和一个刚好包含nil指针的接口值是不同的。这个细微区别产生了一个容易绊倒每个Go程序员的陷阱”</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">“<span class="keyword">const</span> debug = <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> buf *bytes.Buffer</span><br><span class="line">    <span class="keyword">if</span> debug &#123;</span><br><span class="line">        buf = <span class="built_in">new</span>(bytes.Buffer) <span class="comment">// enable collection of output</span></span><br><span class="line">    &#125;</span><br><span class="line">    f(buf) <span class="comment">// <span class="doctag">NOTE:</span> subtly incorrect!</span></span><br><span class="line">    <span class="keyword">if</span> debug &#123;</span><br><span class="line">        <span class="comment">// ...use buf...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// If out is non-nil, output will be written to it.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">f</span><span class="params">(out io.Writer)</span></span> &#123;</span><br><span class="line">    <span class="comment">// ...do something...</span></span><br><span class="line">    <span class="keyword">if</span> out != <span class="literal">nil</span> &#123;</span><br><span class="line">        out.Write([]<span class="keyword">byte</span>(<span class="string">"done!\n"</span>))</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我们可能会预计当把变量debug设置为false时可以禁止对输出的收集，但是实际上在out.Write方法调用时程序发生了panic：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> out != <span class="literal">nil</span> &#123;</span><br><span class="line">    out.Write([]<span class="keyword">byte</span>(<span class="string">"done!\n"</span>)) <span class="comment">// panic: nil pointer dereference</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>当main函数调用函数f时，它给f函数的out参数赋了一个<em>bytes.Buffer的空指针，所以out的动态值是nil。然而，它的动态类型是</em>bytes.Buffer，意思就是out变量是一个包含空指针值的非空接口（如图7.5），所以防御性检查out!=nil的结果依然是true”</p>
+<p>“接口被以两种不同的方式使用。在第一个方式是一个接口的方法表达了实现这个接口的具体类型间的相思性，但是隐藏了代表的细节和这些具体类型本身的操作。重点在于方法上，而不是具体的类型上。</p>
+<p>第二个方式利用一个接口值可以持有各种具体类型值的能力并且将这个接口认为是这些类型的union（联合）。类型断言用来动态地区别这些类型并且对每一种情况都不一样。在这个方式中，重点在于具体的类型满足这个接口，而不是在于接口的方法（如果它确实有一些的话），并且没有任何的信息隐藏。我们将以这种方式使用的接口描述为discriminated unions（可辨识联合）”</p>
 <blockquote>
-<p><em>第12天：读完7.11章节，P692/1195页,落后计划28页, 每天要读60页, Mac版图书</em></p>
+<p><em>第12天：读完7.13章节，P709/1195页,落后计划11页, 每天要读60页, Mac版图书</em></p>
+</blockquote>
+<p>“没有方法的Token接口也是一个可识别联合的例子。传统的接口如io.Reader的目的是隐藏满足它的具体类型的细节，这样就可以创造出新的实现；在这个实现中每个具体类型都被统一地对待。相反，满足可识别联合的具体类型的集合被设计确定和暴露，而不是隐藏。可识别的联合类型几乎没有方法；操作它们的函数使用一个类型开关的case集合来进行表述；这个case集合中每一个case中有不同的逻辑。”</p>
+<p>“当设计一个新的包时，新的Go程序员总是通过创建一个接口的集合开始和后面定义满足它们的具体类型。这种方式的结果就是有很多的接口，它们中的每一个仅只有一个实现。不要再这么做了。这种接口是不必要的抽象；它们也有一个运行时损耗。你可以使用导出机制(§6.6)来限制一个类型的方法或一个结构体的字段是否在包外可见。接口只有当有两个或两个以上的具体类型必须以相同的方式进行处理时才需要”</p>
+<p>“对于接口设计的一个好的标准就是 ask only for what you need（只考虑你需要的东西）”</p>
+<p>“不是任何事物都需要被当做成一个对象；独立的函数有它们自己的用处，未封装的数据类型也是这样。”</p>
+<blockquote>
+<p><em>第13天：读完7.15章节，P721/1195页,落后计划59页, 每天要读60页, Mac版图书</em></p>
+</blockquote>
+<p>“当一个程序启动时，其主函数即在一个单独的goroutine中运行，我们叫它main goroutine。新的goroutine会用go语句来创建。在语法上，go语句是一个普通的函数或方法调用前加上关键字go。go语句会使其语句中的函数在一个新创建的goroutine中运行。而go语句本身会迅速地完成。”</p>
+<p>“当main goroutine碰到输入终止时，例如，用户在终端中按了Control-D(^D)，在windows上是Control-Z，这时程序就会被终止，尽管其它goroutine中还有进行中的任务”</p>
+<blockquote>
+<p><em>第14天：读完8.3章节，P748/1195页,落后计划92页, 每天要读60页, Mac版图书</em></p>
+</blockquote>
+<p>“基于channels发送消息有两个重要方面。首先每个消息都有一个值，但是有时候通讯的事实和发生的时刻也同样重要。当我们更希望强调通讯发生的时刻时，我们将它称为消息事件。有些消息事件并不携带额外的信息，它仅仅是用作两个goroutine之间的同步，这时候我们可以用struct{}空结构体作为channels元素的类型，虽然也可以使用bool或int类型实现同样的功能，done &lt;- 1语句也比done &lt;- struct{}{}更短”</p>
+<p>“多个goroutines并发地向同一个channel发送数据，或从同一个channel接收数据都是常见的用法”</p>
+<p>“即使我们知道将要发送到一个channel的信息的数量上限，创建一个对应容量大小带缓存channel也是不现实的，因为这要求在执行任何接收操作之前缓存所有已经发送的值。如果未能分配足够的缓冲将导致程序死锁。”</p>
+<blockquote>
+<p><em>第15天：读完8.4章节，P773/1195页,落后计划127页, 每天要读60页, Mac版图书</em></p>
+</blockquote>
+<p>“一种特殊的计数器，这个计数器需要在多个goroutine操作时做到安全并且提供提供在其减为零之前一直等待的一种方法。这种计数类型被称为sync.WaitGroup”</p>
+<p>“有时候我们希望能够从channel中发送或者接收值，并避免因为发送或者接收导致的阻塞，尤其是当channel没有准备好写或者读时。select语句就可以实现这样的功能。select会有一个default来设置当其它的操作都不能够马上被处理时程序需要执行哪些逻辑。”</p>
+<p>“channel的零值是nil。也许会让你觉得比较奇怪，nil的channel有时候也是有一些用处的。因为对一个nil的channel发送和接收操作会永远阻塞，在select语句中操作nil的channel永远都不会被select到”</p>
+<blockquote>
+<p><em>第16天：读完8.7章节，P814/1195页,落后计划146页, 每天要读60页, Mac版图书</em></p>
+</blockquote>
+<p>“我们来重复一下数据竞争的定义，因为实在太重要了：数据竞争会在两个以上的goroutine并发访问相同的变量且至少其中一个为写操作时发生。根据上述定义，有三种方式可以避免数据竞争：”</p>
+<ol>
+<li>第一种方法是不要去写变量</li>
+<li>第二种避免数据竞争的方法是，避免从多个goroutine访问变量。<br>Go的口头禅:不要使用共享数据来通信；使用通信来共享数据</li>
+<li>第三种避免数据竞争的方法是允许很多goroutine去访问变量，但是在同一个时刻最多只有一个goroutine在访问。这种方式被称为“互斥”</li>
+</ol>
+<blockquote>
+<p><em>第17天：读完9.1章节，P862/1195页,落后计划1158页, 每天要读60页, Mac版图书</em></p>
 </blockquote>
 
       
